@@ -99,10 +99,50 @@ impl<'a> HexView<'a> {
         }
     }
 
+    /// 前の行からはみ出した文字の継続バイト数を計算
+    fn count_continuation_bytes(&self, row_start: usize) -> usize {
+        if row_start == 0 {
+            return 0;
+        }
+
+        // 前の数バイトを調べて、行境界をまたぐ文字があるかチェック
+        let lookahead = 4;
+        let check_start = row_start.saturating_sub(lookahead);
+        let check_bytes = &self.data[check_start..row_start.min(self.data.len())];
+
+        if check_bytes.is_empty() {
+            return 0;
+        }
+
+        // デコードして最後の文字が行をまたぐかチェック
+        let decoded = decode_for_display(check_bytes, self.encoding);
+
+        let mut pos = 0;
+        let mut last_char_end = 0;
+        while pos < decoded.len() {
+            if let Some(ref dc) = decoded[pos] {
+                last_char_end = check_start + pos + dc.byte_len;
+                pos += dc.byte_len;
+            } else {
+                pos += 1;
+            }
+        }
+
+        // 最後の文字が row_start を超えていれば、その分が継続バイト
+        if last_char_end > row_start {
+            last_char_end - row_start
+        } else {
+            0
+        }
+    }
+
     /// 1行分のデータを描画
     fn render_row(&self, row_offset: usize, area: Rect, buf: &mut Buffer) {
         let row_start = self.offset + row_offset * self.bytes_per_row;
         let row_end = (row_start + self.bytes_per_row).min(self.data.len());
+
+        // 前の行からはみ出した文字の継続バイト数
+        let skip_bytes = self.count_continuation_bytes(row_start);
 
         // EOF行も描画可能にする（カーソルがEOF位置にある場合）
         let eof_pos = self.data.len();
@@ -157,14 +197,23 @@ impl<'a> HexView<'a> {
         x += 1; // 区切りスペース
 
         // ASCII表示（エンコーディングに従ってデコード）
-        let row_bytes = if row_end > row_start {
-            &self.data[row_start..row_end]
+        // 行末のマルチバイト文字を正しく表示するため、次の行のバイトも含めてデコード
+        let lookahead = 4; // UTF-8/UTF-16の最大バイト数
+        let decode_end = (row_end + lookahead).min(self.data.len());
+        let row_bytes = if decode_end > row_start {
+            &self.data[row_start..decode_end]
         } else {
             &[]
         };
         let decoded = decode_for_display(row_bytes, self.encoding);
 
         let mut byte_idx = 0;
+        // 前の行からはみ出した文字の継続バイトをスキップ
+        while byte_idx < skip_bytes && byte_idx < self.bytes_per_row {
+            x += 1;
+            byte_idx += 1;
+        }
+
         while byte_idx < self.bytes_per_row {
             let abs_idx = row_start + byte_idx;
 
@@ -189,20 +238,28 @@ impl<'a> HexView<'a> {
                     // 文字を表示
                     buf.set_string(x, y, &dc.display, style);
 
-                    // 表示幅分進める（ただしbyte_lenの範囲内で）
-                    let advance = dc.width.min(dc.byte_len);
+                    // この行内のバイト数を計算
+                    let bytes_in_row = dc.byte_len.min(self.bytes_per_row - byte_idx);
+
+                    // 表示幅分進める
+                    // 行をはみ出す文字は表示幅だけ進める（はみ出し表示）
+                    let advance = if dc.byte_len <= bytes_in_row {
+                        // 行内に収まる場合
+                        dc.width.min(dc.byte_len)
+                    } else {
+                        // 行をはみ出す場合：文字の表示幅を使用
+                        dc.width
+                    };
                     x += advance as u16;
 
-                    // 残りのバイト分はスキップ（継続バイト）
-                    // 表示幅がバイト長より小さい場合、空白で埋める
-                    if dc.byte_len > dc.width {
-                        for _ in dc.width..dc.byte_len {
-                            buf.set_string(x, y, " ", style);
+                    // 残りのバイト分（行内）はスペースで埋める
+                    if bytes_in_row > advance {
+                        for _ in advance..bytes_in_row {
                             x += 1;
                         }
                     }
 
-                    byte_idx += dc.byte_len;
+                    byte_idx += bytes_in_row;
                 } else {
                     // None = 継続バイト（前の文字の一部）- スキップ済みのはず
                     x += 1;
