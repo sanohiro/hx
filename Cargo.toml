@@ -2,8 +2,20 @@
 name = "hx"
 version = "0.1.0"
 edition = "2024"
-description = "A terminal hex editor inspired by Stirling"
+description = "A terminal hex editor with Emacs keybindings"
 license = "MIT"
+
+[lib]
+name = "hx"
+path = "src/lib.rs"
+
+[[bin]]
+name = "hx"
+path = "src/bin/hx.rs"
+
+[[bin]]
+name = "bx"
+path = "src/bin/bx.rs"
 
 [dependencies]
 # TUI

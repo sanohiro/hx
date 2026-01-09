@@ -1,10 +1,4 @@
-mod app;
-mod buffer;
-mod clipboard;
-mod encoding;
-mod ui;
-
-use std::io::{self, IsTerminal, Read};
+use std::io::{self, IsTerminal, Read, Write as _};
 
 use anyhow::Result;
 use clap::Parser;
@@ -16,10 +10,9 @@ use crossterm::{
         EnterAlternateScreen, LeaveAlternateScreen, SetTitle,
     },
 };
-use std::io::Write as _;
 use ratatui::{backend::CrosstermBackend, Terminal};
 
-use app::App;
+use hx::app::App;
 
 /// Terminal hex editor inspired by Stirling
 #[derive(Parser, Debug)]

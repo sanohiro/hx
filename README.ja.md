@@ -2,6 +2,10 @@
 
 `C-x C-s` で考える人のためのターミナルバイナリエディタ。
 
+このパッケージには2つのツールが含まれています:
+- **hx** — 対話的TUIバイナリエディタ
+- **bx** — パイプ用CLIバイナリツール
+
 > xxdは原始的すぎる、GUIバイナリエディタは重すぎる。
 > hxはその中間。
 
@@ -162,6 +166,36 @@ hxはEmacsスタイルのキーバインドを使用。`C-` はCtrl、`M-` はAl
 - [ze](https://github.com/sanohiro/ze) — ゼロレイテンシのEmacs風エディタ
 - [hexyl](https://github.com/sharkdp/hexyl) — Hexビューア
 - [Stirling](https://github.com/nickg/stirling) — GUIバイナリエディタ
+
+---
+
+## bx — パイプ用バイナリツール
+
+hxに同梱のUnixスタイルバイナリ操作ツール。
+
+```bash
+# HEXパターン検索
+echo -n "Hello" | bx find 6C6C        # "ll"を検索
+bx find DEADBEEF -i firmware.bin
+
+# バイト範囲抽出
+bx slice 0x100:0x200 -i file.bin      # バイト抽出
+bx slice 0:512 -i file.bin -x         # HEXダンプ
+
+# パターン置換
+bx replace FF00 AA55 < in.bin > out.bin
+bx replace --all 00 FF < in > out     # 全置換
+
+# オフセット指定パッチ
+bx patch 0x100=DEAD 0x200=BEEF < in > out
+
+# ファイル情報（サイズ、エントロピー）
+bx info -i file.bin
+
+# HEX ⇔ バイナリ変換
+echo -n "Hello" | bx conv bin2hex     # 48 65 6C 6C 6F
+echo "48656C6C6F" | bx conv hex2bin   # Hello
+```
 
 ---
 

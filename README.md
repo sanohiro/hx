@@ -2,6 +2,10 @@
 
 A terminal hex editor for those who think in `C-x C-s`.
 
+This package includes two tools:
+- **hx** — Interactive TUI hex editor
+- **bx** — CLI binary tool for pipes
+
 > If xxd feels primitive and GUI hex editors feel heavy,
 > hx is the middle ground.
 
@@ -162,6 +166,36 @@ Bracketed paste auto-detects format:
 - [ze](https://github.com/sanohiro/ze) — Zero-latency Emacs-like editor
 - [hexyl](https://github.com/sharkdp/hexyl) — Hex viewer
 - [Stirling](https://github.com/nickg/stirling) — GUI hex editor
+
+---
+
+## bx — Binary Tool for Pipes
+
+Unix-style binary manipulation tool included with hx.
+
+```bash
+# Find hex pattern
+echo -n "Hello" | bx find 6C6C        # Find "ll"
+bx find DEADBEEF -i firmware.bin
+
+# Extract byte range
+bx slice 0x100:0x200 -i file.bin      # Extract bytes
+bx slice 0:512 -i file.bin -x         # Hex dump
+
+# Replace pattern
+bx replace FF00 AA55 < in.bin > out.bin
+bx replace --all 00 FF < in > out     # Replace all
+
+# Patch at offset
+bx patch 0x100=DEAD 0x200=BEEF < in > out
+
+# File info (size, entropy)
+bx info -i file.bin
+
+# Convert hex <-> binary
+echo -n "Hello" | bx conv bin2hex     # 48 65 6C 6C 6F
+echo "48656C6C6F" | bx conv hex2bin   # Hello
+```
 
 ---
 
