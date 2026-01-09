@@ -103,13 +103,16 @@ hx uses Emacs-style keybindings. `C-` means Ctrl, `M-` means Alt/Option.
 | `M-w` / `C-w` / `C-y` | Copy / Cut / Paste |
 | `C-g` | Cancel |
 
-### Search
+### Search & Replace
 
 | Key | Action |
 |-----|--------|
 | `C-s` / `C-r` | Search forward / backward |
+| `M-%` | Query replace |
 
-Search accepts text or HEX patterns:
+During query replace: `y` (replace), `n` (skip), `!` (replace all), `q` (quit)
+
+Search/replace accepts text or HEX patterns:
 - `hello` — ASCII text
 - `48 65 6C 6C 6F` — Spaced HEX
 - `48656C6C6F` — Continuous HEX

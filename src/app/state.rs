@@ -10,6 +10,19 @@ use ratatui::{
 };
 
 use super::{Action, EditMode, InputState, KeyMod, PrefixKey};
+
+/// 置換モード状態
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum ReplaceMode {
+    #[default]
+    Off,
+    /// 検索パターン入力中
+    EnteringSearch,
+    /// 置換パターン入力中
+    EnteringReplace,
+    /// 確認中（y/n/!/q）
+    Confirming,
+}
 use crate::buffer::Document;
 use crate::clipboard::{self, HexFormat};
 use crate::encoding::{self, CharEncoding};
@@ -51,6 +64,10 @@ pub struct App {
     search_query: String,
     /// 検索開始位置（検索キャンセル時に戻る位置）
     search_start_pos: usize,
+    /// 置換モード
+    replace_mode: ReplaceMode,
+    /// 置換先パターン
+    replace_with: String,
 }
 
 impl App {
@@ -74,6 +91,8 @@ impl App {
             search_mode: false,
             search_query: String::new(),
             search_start_pos: 0,
+            replace_mode: ReplaceMode::Off,
+            replace_with: String::new(),
         }
     }
 
@@ -774,6 +793,13 @@ impl App {
                     self.find_prev();
                 }
             }
+            // 置換
+            Action::StartReplace => {
+                self.replace_mode = ReplaceMode::EnteringSearch;
+                self.search_query.clear();
+                self.replace_with.clear();
+                self.search_start_pos = self.cursor;
+            }
             _ => {}
         }
     }
@@ -801,6 +827,12 @@ impl App {
                     // 検索モード中は特別な処理
                     if self.search_mode {
                         self.handle_search_key(key);
+                        return Ok(());
+                    }
+
+                    // 置換モード中は特別な処理
+                    if self.replace_mode != ReplaceMode::Off {
+                        self.handle_replace_key(key);
                         return Ok(());
                     }
 
@@ -911,6 +943,179 @@ impl App {
             // ラップアラウンド
             self.cursor = pos;
             self.ensure_cursor_visible();
+        }
+    }
+
+    /// 置換モード中のキー処理
+    fn handle_replace_key(&mut self, key: crossterm::event::KeyEvent) {
+        let ctrl = key.modifiers.contains(KeyModifiers::CONTROL);
+
+        match self.replace_mode {
+            ReplaceMode::EnteringSearch => {
+                match key.code {
+                    // Escape / C-g: キャンセル
+                    KeyCode::Esc | KeyCode::Char('g') if ctrl => {
+                        self.replace_mode = ReplaceMode::Off;
+                        self.cursor = self.search_start_pos;
+                        self.ensure_cursor_visible();
+                        self.status_message = Some("Cancelled".to_string());
+                    }
+                    // Enter: 検索パターン確定、置換パターン入力へ
+                    KeyCode::Enter => {
+                        if self.search_query.is_empty() {
+                            self.replace_mode = ReplaceMode::Off;
+                            self.status_message = Some("Empty search pattern".to_string());
+                        } else {
+                            self.replace_mode = ReplaceMode::EnteringReplace;
+                        }
+                    }
+                    // Backspace
+                    KeyCode::Backspace => {
+                        self.search_query.pop();
+                    }
+                    // 文字入力
+                    KeyCode::Char(ch) if !ctrl => {
+                        self.search_query.push(ch);
+                    }
+                    _ => {}
+                }
+            }
+            ReplaceMode::EnteringReplace => {
+                match key.code {
+                    // Escape / C-g: キャンセル
+                    KeyCode::Esc | KeyCode::Char('g') if ctrl => {
+                        self.replace_mode = ReplaceMode::Off;
+                        self.cursor = self.search_start_pos;
+                        self.ensure_cursor_visible();
+                        self.status_message = Some("Cancelled".to_string());
+                    }
+                    // Enter: 置換パターン確定、確認モードへ
+                    KeyCode::Enter => {
+                        self.replace_mode = ReplaceMode::Confirming;
+                        self.find_next_for_replace();
+                    }
+                    // Backspace
+                    KeyCode::Backspace => {
+                        self.replace_with.pop();
+                    }
+                    // 文字入力
+                    KeyCode::Char(ch) if !ctrl => {
+                        self.replace_with.push(ch);
+                    }
+                    _ => {}
+                }
+            }
+            ReplaceMode::Confirming => {
+                match key.code {
+                    // y: この箇所を置換して次へ
+                    KeyCode::Char('y') | KeyCode::Char('Y') | KeyCode::Char(' ') => {
+                        self.do_replace_current();
+                        self.find_next_for_replace();
+                    }
+                    // n: スキップして次へ
+                    KeyCode::Char('n') | KeyCode::Char('N') | KeyCode::Delete => {
+                        self.find_next_for_replace();
+                    }
+                    // !: 残り全てを置換
+                    KeyCode::Char('!') => {
+                        self.do_replace_all_remaining();
+                    }
+                    // q / Escape / C-g: 終了
+                    KeyCode::Char('q') | KeyCode::Char('Q')
+                    | KeyCode::Esc | KeyCode::Char('g') if ctrl || !ctrl => {
+                        self.replace_mode = ReplaceMode::Off;
+                        self.status_message = Some("Query replace finished".to_string());
+                    }
+                    _ => {}
+                }
+            }
+            ReplaceMode::Off => {}
+        }
+    }
+
+    /// 置換用の次のマッチを検索
+    fn find_next_for_replace(&mut self) {
+        let pattern = self.search_query_to_bytes();
+        if pattern.is_empty() {
+            self.replace_mode = ReplaceMode::Off;
+            return;
+        }
+
+        let data = self.document.data();
+        let start = self.cursor;
+
+        if let Some(pos) = Self::find_pattern(data, &pattern, start) {
+            self.cursor = pos;
+            self.ensure_cursor_visible();
+            self.status_message = Some(format!(
+                "Replace? (y/n/!/q) at {:08X}",
+                pos
+            ));
+        } else {
+            // 見つからなかった
+            self.replace_mode = ReplaceMode::Off;
+            self.status_message = Some("No more matches".to_string());
+        }
+    }
+
+    /// 現在位置を置換
+    fn do_replace_current(&mut self) {
+        let from_bytes = self.search_query_to_bytes();
+        let to_bytes = self.replace_with_to_bytes();
+
+        if from_bytes.is_empty() {
+            return;
+        }
+
+        // 現在位置が検索パターンとマッチするか確認
+        if let Some(data) = self.document.get_range(self.cursor, self.cursor + from_bytes.len()) {
+            if data == from_bytes {
+                // 削除（末尾から）
+                for i in (0..from_bytes.len()).rev() {
+                    let _ = self.document.delete(self.cursor + i);
+                }
+                // 挿入
+                for (i, &byte) in to_bytes.iter().enumerate() {
+                    let _ = self.document.insert(self.cursor + i, byte);
+                }
+                // カーソルを置換後の末尾に移動
+                self.cursor += to_bytes.len();
+            }
+        }
+    }
+
+    /// 残り全てを置換
+    fn do_replace_all_remaining(&mut self) {
+        let mut count = 0;
+        loop {
+            let from_bytes = self.search_query_to_bytes();
+            if from_bytes.is_empty() {
+                break;
+            }
+
+            let data = self.document.data();
+            let start = self.cursor;
+
+            if let Some(pos) = Self::find_pattern(data, &from_bytes, start) {
+                self.cursor = pos;
+                self.do_replace_current();
+                count += 1;
+            } else {
+                break;
+            }
+        }
+
+        self.replace_mode = ReplaceMode::Off;
+        self.status_message = Some(format!("Replaced {} occurrences", count));
+    }
+
+    /// 置換パターンをバイト列に変換
+    fn replace_with_to_bytes(&self) -> Vec<u8> {
+        let trimmed = self.replace_with.trim();
+        if Self::looks_like_hex(trimmed) {
+            Self::normalized_hex_to_bytes(trimmed).unwrap_or_else(|| self.replace_with.as_bytes().to_vec())
+        } else {
+            self.replace_with.as_bytes().to_vec()
         }
     }
 
@@ -1038,6 +1243,10 @@ impl App {
         let status = if self.search_mode {
             // 検索モード中は検索プロンプトを表示
             format!("I-search: {}_", self.search_query)
+        } else if self.replace_mode == ReplaceMode::EnteringSearch {
+            format!("Query replace: {}_", self.search_query)
+        } else if self.replace_mode == ReplaceMode::EnteringReplace {
+            format!("Query replace {} with: {}_", self.search_query, self.replace_with)
         } else if let Some(ref msg) = self.status_message {
             msg.clone()
         } else if let Some((start, end)) = self.selection {

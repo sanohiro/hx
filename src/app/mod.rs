@@ -87,6 +87,9 @@ pub enum Action {
     SearchNext,
     SearchPrev,
 
+    // 置換
+    StartReplace,    // M-%: query-replace開始
+
     // その他
     Undo,
     Redo,
@@ -185,6 +188,9 @@ impl Action {
             // 検索: C-s (前方), C-r (後方)
             (KeyCode::Char('s'), true, false, false) => Action::StartSearch,
             (KeyCode::Char('r'), true, false, false) => Action::StartSearchBack,
+
+            // 置換: M-% (query-replace)
+            (KeyCode::Char('%'), false, true, _) => Action::StartReplace,
 
             // エンコーディング切替: F2
             (KeyCode::F(2), false, false, _) => Action::ToggleEncoding,
