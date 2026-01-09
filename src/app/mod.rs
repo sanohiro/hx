@@ -36,7 +36,6 @@ pub enum PrefixKey {
 pub enum Action {
     Quit,
     Save,
-    SaveAs(String),
 
     // カーソル移動
     CursorUp,
@@ -97,6 +96,11 @@ pub enum Action {
     // プレフィックスキー
     EnterCtrlX,  // C-x を押した
     Cancel,      // C-g でキャンセル
+
+    // ジャンプ・ファイル操作
+    StartGoto,   // M-g: アドレスジャンプ
+    OpenFile,    // C-x C-f: ファイルを開く
+    SaveAs,      // C-x C-w: 別名保存
 
     None,
 }
@@ -192,6 +196,9 @@ impl Action {
             // 置換: M-% (query-replace)
             (KeyCode::Char('%'), false, true, _) => Action::StartReplace,
 
+            // ジャンプ: M-g (goto-address)
+            (KeyCode::Char('g'), false, true, false) => Action::StartGoto,
+
             // エンコーディング切替: F2
             (KeyCode::F(2), false, false, _) => Action::ToggleEncoding,
 
@@ -208,8 +215,10 @@ impl Action {
             (KeyCode::Char('c'), true) => Action::Quit,
             // C-x C-s: 保存
             (KeyCode::Char('s'), true) => Action::Save,
-            // C-x C-f: ファイルを開く（後で実装）
-            // C-x C-w: 別名保存（後で実装）
+            // C-x C-f: ファイルを開く
+            (KeyCode::Char('f'), true) => Action::OpenFile,
+            // C-x C-w: 別名保存
+            (KeyCode::Char('w'), true) => Action::SaveAs,
 
             // C-g: キャンセル
             (KeyCode::Char('g'), true) => Action::Cancel,

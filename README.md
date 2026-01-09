@@ -122,7 +122,15 @@ Search/replace accepts text or HEX patterns:
 | Key | Action |
 |-----|--------|
 | `C-x C-s` | Save |
+| `C-x C-w` | Save as |
+| `C-x C-f` | Open file |
 | `C-x C-c` | Quit |
+
+### Navigation
+
+| Key | Action |
+|-----|--------|
+| `M-g` | Goto address (hex: `0x100`, `100h`, or decimal) |
 
 ### Display
 

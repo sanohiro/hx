@@ -23,6 +23,19 @@ pub enum ReplaceMode {
     /// 確認中（y/n/!/q）
     Confirming,
 }
+
+/// プロンプト入力モード
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum PromptMode {
+    #[default]
+    Off,
+    /// アドレスジャンプ入力中
+    GotoAddress,
+    /// ファイルパス入力中（開く）
+    OpenFile,
+    /// ファイルパス入力中（別名保存）
+    SaveAs,
+}
 use crate::buffer::Document;
 use crate::clipboard::{self, HexFormat};
 use crate::encoding::{self, CharEncoding};
@@ -68,6 +81,10 @@ pub struct App {
     replace_mode: ReplaceMode,
     /// 置換先パターン
     replace_with: String,
+    /// プロンプト入力モード
+    prompt_mode: PromptMode,
+    /// プロンプト入力内容
+    prompt_input: String,
 }
 
 impl App {
@@ -93,6 +110,8 @@ impl App {
             search_start_pos: 0,
             replace_mode: ReplaceMode::Off,
             replace_with: String::new(),
+            prompt_mode: PromptMode::Off,
+            prompt_input: String::new(),
         }
     }
 
@@ -800,6 +819,22 @@ impl App {
                 self.replace_with.clear();
                 self.search_start_pos = self.cursor;
             }
+            // ジャンプ
+            Action::StartGoto => {
+                self.prompt_mode = PromptMode::GotoAddress;
+                self.prompt_input.clear();
+            }
+            // ファイルを開く
+            Action::OpenFile => {
+                self.prompt_mode = PromptMode::OpenFile;
+                self.prompt_input.clear();
+            }
+            // 別名保存
+            Action::SaveAs => {
+                self.prompt_mode = PromptMode::SaveAs;
+                // 現在のファイル名をデフォルトに
+                self.prompt_input = self.document.filename().unwrap_or("").to_string();
+            }
             _ => {}
         }
     }
@@ -833,6 +868,12 @@ impl App {
                     // 置換モード中は特別な処理
                     if self.replace_mode != ReplaceMode::Off {
                         self.handle_replace_key(key);
+                        return Ok(());
+                    }
+
+                    // プロンプトモード中は特別な処理
+                    if self.prompt_mode != PromptMode::Off {
+                        self.handle_prompt_key(key);
                         return Ok(());
                     }
 
@@ -1119,6 +1160,151 @@ impl App {
         }
     }
 
+    /// プロンプトモード中のキー処理
+    fn handle_prompt_key(&mut self, key: crossterm::event::KeyEvent) {
+        let ctrl = key.modifiers.contains(KeyModifiers::CONTROL);
+
+        match key.code {
+            // Escape / C-g: キャンセル
+            KeyCode::Esc | KeyCode::Char('g') if ctrl => {
+                self.prompt_mode = PromptMode::Off;
+                self.status_message = Some("Cancelled".to_string());
+            }
+            // Enter: 確定
+            KeyCode::Enter => {
+                self.execute_prompt();
+            }
+            // Backspace
+            KeyCode::Backspace => {
+                self.prompt_input.pop();
+            }
+            // 文字入力
+            KeyCode::Char(ch) if !ctrl => {
+                self.prompt_input.push(ch);
+            }
+            _ => {}
+        }
+    }
+
+    /// プロンプト入力を実行
+    fn execute_prompt(&mut self) {
+        let input = self.prompt_input.clone();
+        let mode = self.prompt_mode;
+        self.prompt_mode = PromptMode::Off;
+
+        match mode {
+            PromptMode::GotoAddress => {
+                self.goto_address(&input);
+            }
+            PromptMode::OpenFile => {
+                self.open_file(&input);
+            }
+            PromptMode::SaveAs => {
+                self.save_as(&input);
+            }
+            PromptMode::Off => {}
+        }
+    }
+
+    /// アドレスにジャンプ
+    fn goto_address(&mut self, input: &str) {
+        let input = input.trim();
+        if input.is_empty() {
+            self.status_message = Some("No address".to_string());
+            return;
+        }
+
+        // 0x プレフィックスまたは h サフィックスで16進数
+        let addr = if input.starts_with("0x") || input.starts_with("0X") {
+            usize::from_str_radix(&input[2..], 16)
+        } else if input.ends_with('h') || input.ends_with('H') {
+            usize::from_str_radix(&input[..input.len()-1], 16)
+        } else if input.chars().all(|c| c.is_ascii_hexdigit()) && input.chars().any(|c| c.is_ascii_alphabetic()) {
+            // A-Fを含む場合は16進数として解釈
+            usize::from_str_radix(input, 16)
+        } else {
+            // 10進数
+            input.parse()
+        };
+
+        match addr {
+            Ok(addr) => {
+                if addr <= self.document.len() {
+                    self.cursor = addr;
+                    self.ensure_cursor_visible();
+                    self.status_message = Some(format!("Jumped to {:08X}", addr));
+                } else {
+                    self.status_message = Some(format!(
+                        "Address {:X} exceeds file size {:X}",
+                        addr,
+                        self.document.len()
+                    ));
+                }
+            }
+            Err(_) => {
+                self.status_message = Some("Invalid address".to_string());
+            }
+        }
+    }
+
+    /// ファイルを開く
+    fn open_file(&mut self, path: &str) {
+        let path = path.trim();
+        if path.is_empty() {
+            self.status_message = Some("No file specified".to_string());
+            return;
+        }
+
+        // チルダ展開
+        let expanded = if path.starts_with("~/") {
+            if let Some(home) = std::env::var_os("HOME") {
+                PathBuf::from(home).join(&path[2..])
+            } else {
+                PathBuf::from(path)
+            }
+        } else {
+            PathBuf::from(path)
+        };
+
+        match self.open(&expanded) {
+            Ok(()) => {
+                self.status_message = Some(format!("Opened: {}", expanded.display()));
+            }
+            Err(e) => {
+                self.status_message = Some(format!("Failed to open: {}", e));
+            }
+        }
+    }
+
+    /// 別名保存
+    fn save_as(&mut self, path: &str) {
+        let path = path.trim();
+        if path.is_empty() {
+            self.status_message = Some("No file specified".to_string());
+            return;
+        }
+
+        // チルダ展開
+        let expanded = if path.starts_with("~/") {
+            if let Some(home) = std::env::var_os("HOME") {
+                PathBuf::from(home).join(&path[2..])
+            } else {
+                PathBuf::from(path)
+            }
+        } else {
+            PathBuf::from(path)
+        };
+
+        match self.document.save_as(&expanded) {
+            Ok(()) => {
+                self.status_message = Some(format!("Saved: {}", expanded.display()));
+            }
+            Err(e) => {
+                self.status_message = Some(format!("Failed to save: {}", e));
+            }
+        }
+    }
+
     /// 選択範囲の数値解釈をフォーマット
     fn format_selection_info(&self, start: usize, end: usize) -> String {
         let len = end - start + 1;
@@ -1247,6 +1433,12 @@ impl App {
             format!("Query replace: {}_", self.search_query)
         } else if self.replace_mode == ReplaceMode::EnteringReplace {
             format!("Query replace {} with: {}_", self.search_query, self.replace_with)
+        } else if self.prompt_mode == PromptMode::GotoAddress {
+            format!("Goto address: {}_", self.prompt_input)
+        } else if self.prompt_mode == PromptMode::OpenFile {
+            format!("Open file: {}_", self.prompt_input)
+        } else if self.prompt_mode == PromptMode::SaveAs {
+            format!("Save as: {}_", self.prompt_input)
         } else if let Some(ref msg) = self.status_message {
             msg.clone()
         } else if let Some((start, end)) = self.selection {
