@@ -61,6 +61,8 @@ cp ./target/release/hx ~/.local/bin/
 ```bash
 hx file.bin          # ファイルを開く
 hx                   # 空のバッファで起動
+cat file.bin | hx    # 標準入力から読み込み
+echo -n "Hello" | hx # パイプでデータを渡す
 ```
 
 保存して終了: `C-x C-s` → `C-x C-c`

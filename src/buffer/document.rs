@@ -46,6 +46,18 @@ impl Document {
         }
     }
 
+    /// バイト列から作成
+    pub fn from_bytes(data: Vec<u8>) -> Self {
+        Self {
+            path: None,
+            data,
+            modified: false,
+            readonly: false,
+            undo_stack: Vec::new(),
+            redo_stack: Vec::new(),
+        }
+    }
+
     /// ファイルから読み込み
     pub fn open(path: impl Into<PathBuf>) -> Result<Self, BufferError> {
         let path = path.into();

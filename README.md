@@ -61,6 +61,8 @@ cp ./target/release/hx ~/.local/bin/
 ```bash
 hx file.bin          # Open a file
 hx                   # Start with empty buffer
+cat file.bin | hx    # Read from stdin
+echo -n "Hello" | hx # Pipe data
 ```
 
 Save and quit: `C-x C-s` → `C-x C-c`

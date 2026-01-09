@@ -86,6 +86,14 @@ impl App {
         Ok(())
     }
 
+    /// バイト列から読み込み（標準入力用）
+    pub fn load_bytes(&mut self, data: Vec<u8>) {
+        self.document = Document::from_bytes(data);
+        self.cursor = 0;
+        self.offset = 0;
+        self.selection = None;
+    }
+
     /// 終了すべきかどうか
     pub fn should_quit(&self) -> bool {
         self.should_quit

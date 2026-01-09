@@ -4,7 +4,7 @@ mod clipboard;
 mod encoding;
 mod ui;
 
-use std::io;
+use std::io::{self, IsTerminal, Read};
 
 use anyhow::Result;
 use clap::Parser;
@@ -16,7 +16,7 @@ use crossterm::{
         EnterAlternateScreen, LeaveAlternateScreen, SetTitle,
     },
 };
-use std::io::Write;
+use std::io::Write as _;
 use ratatui::{backend::CrosstermBackend, Terminal};
 
 use app::App;
@@ -42,6 +42,15 @@ struct Args {
 fn main() -> Result<()> {
     let args = Args::parse();
 
+    // 標準入力からデータを読み込む（パイプされている場合）
+    let stdin_data = if !io::stdin().is_terminal() {
+        let mut data = Vec::new();
+        io::stdin().read_to_end(&mut data)?;
+        Some(data)
+    } else {
+        None
+    };
+
     // ターミナルの初期化
     // マウスモードは無効（ターミナルでのテキスト選択・コピーを優先）
     // Alternate Screenでトラックパッドスクロールによるバッファ移動を防止
@@ -59,7 +68,7 @@ fn main() -> Result<()> {
     let mut terminal = Terminal::new(backend)?;
 
     // アプリケーションの実行
-    let result = run_app(&mut terminal, args);
+    let result = run_app(&mut terminal, args, stdin_data);
 
     // ターミナルの後処理
     disable_raw_mode()?;
@@ -79,12 +88,14 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn run_app(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>, args: Args) -> Result<()> {
+fn run_app(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>, args: Args, stdin_data: Option<Vec<u8>>) -> Result<()> {
     let mut app = App::new();
 
-    // ファイルを開く
+    // データを読み込む（優先順位: ファイル > 標準入力）
     if let Some(ref path) = args.file {
         app.open(path)?;
+    } else if let Some(data) = stdin_data {
+        app.load_bytes(data);
     }
 
     // ウィンドウタイトルを設定
