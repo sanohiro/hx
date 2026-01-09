@@ -914,6 +914,80 @@ impl App {
         }
     }
 
+    /// 選択範囲の数値解釈をフォーマット
+    fn format_selection_info(&self, start: usize, end: usize) -> String {
+        let len = end - start + 1;
+        let bytes = match self.document.get_range(start, end + 1) {
+            Some(b) => b,
+            None => return format!("Selection: {} bytes", len),
+        };
+
+        let mut parts = vec![format!("{} bytes", len)];
+
+        match len {
+            1 => {
+                let u = bytes[0];
+                let i = u as i8;
+                parts.push(format!("u8:{} i8:{}", u, i));
+            }
+            2 => {
+                let le = u16::from_le_bytes([bytes[0], bytes[1]]);
+                let be = u16::from_be_bytes([bytes[0], bytes[1]]);
+                parts.push(format!("u16 LE:{} BE:{}", le, be));
+                let le_i = le as i16;
+                let be_i = be as i16;
+                parts.push(format!("i16 LE:{} BE:{}", le_i, be_i));
+            }
+            3 => {
+                // 3バイトは24bit整数として解釈
+                let le = u32::from_le_bytes([bytes[0], bytes[1], bytes[2], 0]);
+                let be = u32::from_be_bytes([0, bytes[0], bytes[1], bytes[2]]);
+                parts.push(format!("u24 LE:{} BE:{}", le, be));
+            }
+            4 => {
+                let le = u32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]);
+                let be = u32::from_be_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]);
+                parts.push(format!("u32 LE:{} BE:{}", le, be));
+                let f_le = f32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]);
+                let f_be = f32::from_be_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]);
+                if f_le.is_finite() || f_be.is_finite() {
+                    parts.push(format!("f32 LE:{:.6} BE:{:.6}", f_le, f_be));
+                }
+            }
+            5..=7 => {
+                // 5-7バイトはそのまま表示
+                parts.push(format!("({:02X?})", bytes));
+            }
+            8 => {
+                let le = u64::from_le_bytes([
+                    bytes[0], bytes[1], bytes[2], bytes[3],
+                    bytes[4], bytes[5], bytes[6], bytes[7],
+                ]);
+                let be = u64::from_be_bytes([
+                    bytes[0], bytes[1], bytes[2], bytes[3],
+                    bytes[4], bytes[5], bytes[6], bytes[7],
+                ]);
+                parts.push(format!("u64 LE:{} BE:{}", le, be));
+                let f_le = f64::from_le_bytes([
+                    bytes[0], bytes[1], bytes[2], bytes[3],
+                    bytes[4], bytes[5], bytes[6], bytes[7],
+                ]);
+                let f_be = f64::from_be_bytes([
+                    bytes[0], bytes[1], bytes[2], bytes[3],
+                    bytes[4], bytes[5], bytes[6], bytes[7],
+                ]);
+                if f_le.is_finite() || f_be.is_finite() {
+                    parts.push(format!("f64 LE:{:.6} BE:{:.6}", f_le, f_be));
+                }
+            }
+            _ => {
+                // 9バイト以上は選択バイト数のみ
+            }
+        }
+
+        format!(" {}", parts.join(" | "))
+    }
+
     /// UIを描画
     pub fn draw(&mut self, frame: &mut Frame) {
         let size = frame.area();
@@ -966,6 +1040,9 @@ impl App {
             format!("I-search: {}_", self.search_query)
         } else if let Some(ref msg) = self.status_message {
             msg.clone()
+        } else if let Some((start, end)) = self.selection {
+            // 選択範囲がある場合は数値解釈を表示
+            self.format_selection_info(start, end)
         } else {
             let byte_info = if self.cursor < self.document.len() {
                 let byte = self.document.get(self.cursor).unwrap_or(0);
