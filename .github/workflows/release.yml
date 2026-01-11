@@ -22,19 +22,19 @@ jobs:
         include:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            artifact: he-linux-x86_64
+            artifact: ehx-linux-x86_64
             cross: false
           - os: ubuntu-latest
             target: aarch64-unknown-linux-gnu
-            artifact: he-linux-aarch64
+            artifact: ehx-linux-aarch64
             cross: true
           - os: macos-14
             target: x86_64-apple-darwin
-            artifact: he-macos-x86_64
+            artifact: ehx-macos-x86_64
             cross: false
           - os: macos-14
             target: aarch64-apple-darwin
-            artifact: he-macos-aarch64
+            artifact: ehx-macos-aarch64
             cross: false
 
     runs-on: ${{ matrix.os }}
@@ -62,7 +62,7 @@ jobs:
       - name: Create archive
         run: |
           cd target/${{ matrix.target }}/release
-          tar -czvf ../../../${{ matrix.artifact }}.tar.gz he bx
+          tar -czvf ../../../${{ matrix.artifact }}.tar.gz ehx bx
           cd ../../..
 
       - name: Upload artifact
@@ -101,10 +101,10 @@ jobs:
 
           # amd64 .deb
           mkdir -p deb-amd64/DEBIAN deb-amd64/usr/bin
-          tar -xzf release/he-linux-x86_64.tar.gz -C deb-amd64/usr/bin/
-          chmod 755 deb-amd64/usr/bin/he deb-amd64/usr/bin/bx
+          tar -xzf release/ehx-linux-x86_64.tar.gz -C deb-amd64/usr/bin/
+          chmod 755 deb-amd64/usr/bin/ehx deb-amd64/usr/bin/bx
           cat > deb-amd64/DEBIAN/control << EOF
-          Package: he
+          Package: ehx
           Version: ${VERSION}
           Section: editors
           Priority: optional
@@ -114,14 +114,14 @@ jobs:
            A terminal hex editor for those who think in C-x C-s.
           EOF
           sed -i 's/^          //' deb-amd64/DEBIAN/control
-          dpkg-deb --build deb-amd64 release/he_amd64.deb
+          dpkg-deb --build deb-amd64 release/ehx_amd64.deb
 
           # arm64 .deb
           mkdir -p deb-arm64/DEBIAN deb-arm64/usr/bin
-          tar -xzf release/he-linux-aarch64.tar.gz -C deb-arm64/usr/bin/
-          chmod 755 deb-arm64/usr/bin/he deb-arm64/usr/bin/bx
+          tar -xzf release/ehx-linux-aarch64.tar.gz -C deb-arm64/usr/bin/
+          chmod 755 deb-arm64/usr/bin/ehx deb-arm64/usr/bin/bx
           cat > deb-arm64/DEBIAN/control << EOF
-          Package: he
+          Package: ehx
           Version: ${VERSION}
           Section: editors
           Priority: optional
@@ -131,7 +131,7 @@ jobs:
            A terminal hex editor for those who think in C-x C-s.
           EOF
           sed -i 's/^          //' deb-arm64/DEBIAN/control
-          dpkg-deb --build deb-arm64 release/he_arm64.deb
+          dpkg-deb --build deb-arm64 release/ehx_arm64.deb
 
           ls -la release/
 
@@ -151,17 +151,17 @@ jobs:
             VERSION="${GITHUB_REF#refs/tags/v}"
           fi
           cd release
-          SHA_MACOS_ARM=$(sha256sum he-macos-aarch64.tar.gz | cut -d' ' -f1)
-          SHA_MACOS_INTEL=$(sha256sum he-macos-x86_64.tar.gz | cut -d' ' -f1)
-          SHA_LINUX_ARM=$(sha256sum he-linux-aarch64.tar.gz | cut -d' ' -f1)
-          SHA_LINUX_INTEL=$(sha256sum he-linux-x86_64.tar.gz | cut -d' ' -f1)
+          SHA_MACOS_ARM=$(sha256sum ehx-macos-aarch64.tar.gz | cut -d' ' -f1)
+          SHA_MACOS_INTEL=$(sha256sum ehx-macos-x86_64.tar.gz | cut -d' ' -f1)
+          SHA_LINUX_ARM=$(sha256sum ehx-linux-aarch64.tar.gz | cut -d' ' -f1)
+          SHA_LINUX_INTEL=$(sha256sum ehx-linux-x86_64.tar.gz | cut -d' ' -f1)
           sed -e "s/{{VERSION}}/${VERSION}/g" \
               -e "s/{{SHA_MACOS_ARM}}/${SHA_MACOS_ARM}/g" \
               -e "s/{{SHA_MACOS_INTEL}}/${SHA_MACOS_INTEL}/g" \
               -e "s/{{SHA_LINUX_ARM}}/${SHA_LINUX_ARM}/g" \
               -e "s/{{SHA_LINUX_INTEL}}/${SHA_LINUX_INTEL}/g" \
-              ../.github/he.rb.template > he.rb
-          cat he.rb
+              ../.github/ehx.rb.template > ehx.rb
+          cat ehx.rb
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
@@ -187,14 +187,14 @@ jobs:
           else
             VERSION="${GITHUB_REF#refs/tags/v}"
           fi
-          git clone https://x-access-token:${HOMEBREW_TAP_TOKEN}@github.com/sanohiro/homebrew-he.git
-          mkdir -p homebrew-he/Formula
-          cp release/he.rb homebrew-he/Formula/
-          cd homebrew-he
+          git clone https://x-access-token:${HOMEBREW_TAP_TOKEN}@github.com/sanohiro/homebrew-ehx.git
+          mkdir -p homebrew-ehx/Formula
+          cp release/ehx.rb homebrew-ehx/Formula/
+          cd homebrew-ehx
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add Formula/he.rb
-          git diff --cached --quiet || git commit -m "Update he to ${VERSION}"
+          git add Formula/ehx.rb
+          git diff --cached --quiet || git commit -m "Update ehx to ${VERSION}"
           git push
 
       - name: Update apt repository
@@ -214,12 +214,12 @@ jobs:
 
           echo "${APT_GPG_PRIVATE_KEY}" | gpg --batch --import
 
-          mkdir -p apt-repo/pool/main/h/he
+          mkdir -p apt-repo/pool/main/e/ehx
           mkdir -p apt-repo/dists/stable/main/binary-amd64
           mkdir -p apt-repo/dists/stable/main/binary-arm64
 
-          cp release/he_amd64.deb apt-repo/pool/main/h/he/
-          cp release/he_arm64.deb apt-repo/pool/main/h/he/
+          cp release/ehx_amd64.deb apt-repo/pool/main/e/ehx/
+          cp release/ehx_arm64.deb apt-repo/pool/main/e/ehx/
 
           cd apt-repo
           dpkg-scanpackages --arch amd64 pool/ > dists/stable/main/binary-amd64/Packages
@@ -228,14 +228,14 @@ jobs:
           gzip -k dists/stable/main/binary-arm64/Packages
 
           cat > dists/stable/Release << EOF
-          Origin: he
-          Label: he
+          Origin: ehx
+          Label: ehx
           Suite: stable
           Codename: stable
           Date: $(date -Ru)
           Architectures: amd64 arm64
           Components: main
-          Description: he apt repository
+          Description: ehx apt repository
           EOF
           sed -i 's/^          //' dists/stable/Release
 
@@ -253,7 +253,7 @@ jobs:
           gpg --batch --yes --armor --detach-sign -o dists/stable/Release.gpg dists/stable/Release
           gpg --batch --yes --armor --clearsign -o dists/stable/InRelease dists/stable/Release
 
-          gpg --armor --export > he.gpg
+          gpg --armor --export > ehx.gpg
 
           cp ../.github/install.sh .
 

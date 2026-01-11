@@ -12,7 +12,7 @@ use crossterm::{
 };
 use ratatui::{backend::CrosstermBackend, Terminal};
 
-use he::app::App;
+use ehx::app::App;
 
 /// Terminal hex editor inspired by Stirling
 #[derive(Parser, Debug)]

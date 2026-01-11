@@ -1,21 +1,21 @@
-# he — Emacsキーバインドのバイナリエディタ
+# ehx — Emacsキーバインドのバイナリエディタ
 
 `C-x C-s` で考える人のためのターミナルバイナリエディタ。
 
 このパッケージには2つのツールが含まれています:
-- **he** — 対話的TUIバイナリエディタ
+- **ehx** — 対話的TUIバイナリエディタ
 - **bx** — パイプ用CLIバイナリツール
 
 > xxdは原始的すぎる、GUIバイナリエディタは重すぎる。
-> heはその中間。
+> ehxはその中間。
 
 [English](README.md)
 
 ---
 
-## なぜhe？
+## なぜehx？
 
-世の中のバイナリエディタはvi風かオリジナルのキーバインドばかり。**he** はEmacsユーザーのためのバイナリエディタです。バイナリ編集のためだけに指の記憶を切り替える必要はありません。
+世の中のバイナリエディタはvi風かオリジナルのキーバインドばかり。**ehx** はEmacsユーザーのためのバイナリエディタです。バイナリ編集のためだけに指の記憶を切り替える必要はありません。
 
 - 同じ移動: `C-f`, `C-b`, `C-n`, `C-p`
 - 同じファイル操作: `C-x C-s`, `C-x C-c`
@@ -51,22 +51,22 @@
 ### Homebrew (macOS / Linux)
 
 ```bash
-brew tap sanohiro/he
-brew install he
+brew tap sanohiro/ehx
+brew install ehx
 ```
 
 ### apt (Debian / Ubuntu)
 
 ```bash
 curl -fsSL https://sanohiro.github.io/hx/install.sh | sudo sh
-sudo apt install he
+sudo apt install ehx
 ```
 
 または[Releases](https://github.com/sanohiro/hx/releases)から`.deb`を直接ダウンロード:
 
 ```bash
-wget https://github.com/sanohiro/hx/releases/latest/download/he_amd64.deb
-sudo apt install ./he_amd64.deb
+wget https://github.com/sanohiro/hx/releases/latest/download/ehx_amd64.deb
+sudo apt install ./ehx_amd64.deb
 ```
 
 ### ソースからビルド
@@ -76,7 +76,7 @@ sudo apt install ./he_amd64.deb
 git clone https://github.com/sanohiro/hx
 cd hx
 cargo build --release
-cp ./target/release/he ./target/release/bx ~/.local/bin/
+cp ./target/release/ehx ./target/release/bx ~/.local/bin/
 ```
 
 ---
@@ -84,10 +84,10 @@ cp ./target/release/he ./target/release/bx ~/.local/bin/
 ## クイックスタート
 
 ```bash
-he file.bin          # ファイルを開く
-he                   # 空のバッファで起動
-cat file.bin | he    # 標準入力から読み込み
-echo -n "Hello" | he # パイプでデータを渡す
+ehx file.bin          # ファイルを開く
+ehx                   # 空のバッファで起動
+cat file.bin | ehx    # 標準入力から読み込み
+echo -n "Hello" | ehx # パイプでデータを渡す
 ```
 
 保存して終了: `C-x C-s` → `C-x C-c`
@@ -96,7 +96,7 @@ echo -n "Hello" | he # パイプでデータを渡す
 
 ## キーバインド
 
-heはEmacsスタイルのキーバインドを使用。`C-` はCtrl、`M-` はAlt/Option。
+ehxはEmacsスタイルのキーバインドを使用。`C-` はCtrl、`M-` はAlt/Option。
 
 ### カーソル移動
 
@@ -217,7 +217,7 @@ heはEmacsスタイルのキーバインドを使用。`C-` はCtrl、`M-` はAl
 
 ## bx — パイプ用バイナリツール
 
-heに同梱のUnixスタイルバイナリ操作ツール。
+ehxに同梱のUnixスタイルバイナリ操作ツール。
 
 ```bash
 # HEXパターン検索

@@ -1,7 +1,7 @@
 # typed: false
 # frozen_string_literal: true
 
-class He < Formula
+class Ehx < Formula
   desc "Terminal hex editor with Emacs keybindings"
   homepage "https://github.com/sanohiro/hx"
   version "{{VERSION}}"
@@ -9,32 +9,32 @@ class He < Formula
 
   on_macos do
     on_arm do
-      url "https://github.com/sanohiro/hx/releases/download/v{{VERSION}}/he-macos-aarch64.tar.gz"
+      url "https://github.com/sanohiro/hx/releases/download/v{{VERSION}}/ehx-macos-aarch64.tar.gz"
       sha256 "{{SHA_MACOS_ARM}}"
     end
     on_intel do
-      url "https://github.com/sanohiro/hx/releases/download/v{{VERSION}}/he-macos-x86_64.tar.gz"
+      url "https://github.com/sanohiro/hx/releases/download/v{{VERSION}}/ehx-macos-x86_64.tar.gz"
       sha256 "{{SHA_MACOS_INTEL}}"
     end
   end
 
   on_linux do
     on_arm do
-      url "https://github.com/sanohiro/hx/releases/download/v{{VERSION}}/he-linux-aarch64.tar.gz"
+      url "https://github.com/sanohiro/hx/releases/download/v{{VERSION}}/ehx-linux-aarch64.tar.gz"
       sha256 "{{SHA_LINUX_ARM}}"
     end
     on_intel do
-      url "https://github.com/sanohiro/hx/releases/download/v{{VERSION}}/he-linux-x86_64.tar.gz"
+      url "https://github.com/sanohiro/hx/releases/download/v{{VERSION}}/ehx-linux-x86_64.tar.gz"
       sha256 "{{SHA_LINUX_INTEL}}"
     end
   end
 
   def install
-    bin.install "he"
+    bin.install "ehx"
     bin.install "bx"
   end
 
   test do
-    assert_match "he", shell_output("#{bin}/he --version")
+    assert_match "ehx", shell_output("#{bin}/ehx --version")
   end
 end

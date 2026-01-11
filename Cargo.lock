@@ -295,6 +295,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "ehx"
+version = "0.1.2"
+dependencies = [
+ "anyhow",
+ "arboard",
+ "base64",
+ "clap",
+ "crossterm",
+ "encoding_rs",
+ "memmap2",
+ "ratatui",
+ "thiserror",
+ "unicode-segmentation",
+ "unicode-width 0.2.0",
+]
+
+[[package]]
 name = "either"
 version = "1.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -406,23 +423,6 @@ dependencies = [
  "allocator-api2",
  "equivalent",
  "foldhash",
-]
-
-[[package]]
-name = "he"
-version = "0.1.1"
-dependencies = [
- "anyhow",
- "arboard",
- "base64",
- "clap",
- "crossterm",
- "encoding_rs",
- "memmap2",
- "ratatui",
- "thiserror",
- "unicode-segmentation",
- "unicode-width 0.2.0",
 ]
 
 [[package]]

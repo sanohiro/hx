@@ -1,21 +1,21 @@
-# he — Hex Editor with Emacs Keybindings
+# ehx — Emacs Hex Editor
 
 A terminal hex editor for those who think in `C-x C-s`.
 
 This package includes two tools:
-- **he** — Interactive TUI hex editor
+- **ehx** — Interactive TUI hex editor
 - **bx** — CLI binary tool for pipes
 
 > If xxd feels primitive and GUI hex editors feel heavy,
-> he is the middle ground.
+> ehx is the middle ground.
 
 [日本語](README.ja.md)
 
 ---
 
-## Why he?
+## Why ehx?
 
-Most hex editors use vi-style or custom keybindings. **he** is for Emacs users who don't want to context-switch their muscle memory just to edit a binary file.
+Most hex editors use vi-style or custom keybindings. **ehx** is for Emacs users who don't want to context-switch their muscle memory just to edit a binary file.
 
 - Same navigation: `C-f`, `C-b`, `C-n`, `C-p`
 - Same file operations: `C-x C-s`, `C-x C-c`
@@ -51,22 +51,22 @@ Just edit bytes like you edit text.
 ### Homebrew (macOS / Linux)
 
 ```bash
-brew tap sanohiro/he
-brew install he
+brew tap sanohiro/ehx
+brew install ehx
 ```
 
 ### apt (Debian / Ubuntu)
 
 ```bash
 curl -fsSL https://sanohiro.github.io/hx/install.sh | sudo sh
-sudo apt install he
+sudo apt install ehx
 ```
 
 Or download `.deb` directly from [Releases](https://github.com/sanohiro/hx/releases):
 
 ```bash
-wget https://github.com/sanohiro/hx/releases/latest/download/he_amd64.deb
-sudo apt install ./he_amd64.deb
+wget https://github.com/sanohiro/hx/releases/latest/download/ehx_amd64.deb
+sudo apt install ./ehx_amd64.deb
 ```
 
 ### Build from source
@@ -76,7 +76,7 @@ sudo apt install ./he_amd64.deb
 git clone https://github.com/sanohiro/hx
 cd hx
 cargo build --release
-cp ./target/release/he ./target/release/bx ~/.local/bin/
+cp ./target/release/ehx ./target/release/bx ~/.local/bin/
 ```
 
 ---
@@ -84,10 +84,10 @@ cp ./target/release/he ./target/release/bx ~/.local/bin/
 ## Quick Start
 
 ```bash
-he file.bin          # Open a file
-he                   # Start with empty buffer
-cat file.bin | he    # Read from stdin
-echo -n "Hello" | he # Pipe data
+ehx file.bin          # Open a file
+ehx                   # Start with empty buffer
+cat file.bin | ehx    # Read from stdin
+echo -n "Hello" | ehx # Pipe data
 ```
 
 Save and quit: `C-x C-s` → `C-x C-c`
@@ -96,7 +96,7 @@ Save and quit: `C-x C-s` → `C-x C-c`
 
 ## Keybindings
 
-he uses Emacs-style keybindings. `C-` means Ctrl, `M-` means Alt/Option.
+ehx uses Emacs-style keybindings. `C-` means Ctrl, `M-` means Alt/Option.
 
 ### Cursor Movement
 
@@ -217,7 +217,7 @@ Bracketed paste auto-detects format:
 
 ## bx — Binary Tool for Pipes
 
-Unix-style binary manipulation tool included with he.
+Unix-style binary manipulation tool included with ehx.
 
 ```bash
 # Find hex pattern
