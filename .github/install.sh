@@ -1,16 +1,16 @@
 #!/bin/sh
-# hx apt repository installer
+# he apt repository installer
 # Usage: curl -fsSL https://sanohiro.github.io/hx/install.sh | sudo sh
 
 set -e
 
 # Add GPG key
-curl -fsSL https://sanohiro.github.io/hx/hx.gpg | gpg --dearmor -o /usr/share/keyrings/hx.gpg
+curl -fsSL https://sanohiro.github.io/hx/he.gpg | gpg --dearmor -o /usr/share/keyrings/he.gpg
 
 # Add repository
-echo "deb [signed-by=/usr/share/keyrings/hx.gpg] https://sanohiro.github.io/hx stable main" > /etc/apt/sources.list.d/hx.list
+echo "deb [signed-by=/usr/share/keyrings/he.gpg] https://sanohiro.github.io/hx stable main" > /etc/apt/sources.list.d/he.list
 
 # Update package list
 apt update
 
-echo "Done! Run 'apt install hx' to install."
+echo "Done! Run 'apt install he' to install."

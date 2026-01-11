@@ -1,17 +1,17 @@
 [package]
-name = "hx"
-version = "0.1.0"
+name = "he"
+version = "0.1.1"
 edition = "2024"
 description = "A terminal hex editor with Emacs keybindings"
 license = "MIT"
 
 [lib]
-name = "hx"
+name = "he"
 path = "src/lib.rs"
 
 [[bin]]
-name = "hx"
-path = "src/bin/hx.rs"
+name = "he"
+path = "src/bin/he.rs"
 
 [[bin]]
 name = "bx"

@@ -1,21 +1,21 @@
-# hx — Hex Editor with Emacs Keybindings
+# he — Hex Editor with Emacs Keybindings
 
 A terminal hex editor for those who think in `C-x C-s`.
 
 This package includes two tools:
-- **hx** — Interactive TUI hex editor
+- **he** — Interactive TUI hex editor
 - **bx** — CLI binary tool for pipes
 
 > If xxd feels primitive and GUI hex editors feel heavy,
-> hx is the middle ground.
+> he is the middle ground.
 
 [日本語](README.ja.md)
 
 ---
 
-## Why hx?
+## Why he?
 
-Most hex editors use vi-style or custom keybindings. **hx** is for Emacs users who don't want to context-switch their muscle memory just to edit a binary file.
+Most hex editors use vi-style or custom keybindings. **he** is for Emacs users who don't want to context-switch their muscle memory just to edit a binary file.
 
 - Same navigation: `C-f`, `C-b`, `C-n`, `C-p`
 - Same file operations: `C-x C-s`, `C-x C-c`
@@ -51,22 +51,22 @@ Just edit bytes like you edit text.
 ### Homebrew (macOS / Linux)
 
 ```bash
-brew tap sanohiro/hx
-brew install hx
+brew tap sanohiro/he
+brew install he
 ```
 
 ### apt (Debian / Ubuntu)
 
 ```bash
 curl -fsSL https://sanohiro.github.io/hx/install.sh | sudo sh
-sudo apt install hx
+sudo apt install he
 ```
 
 Or download `.deb` directly from [Releases](https://github.com/sanohiro/hx/releases):
 
 ```bash
-wget https://github.com/sanohiro/hx/releases/latest/download/hx_amd64.deb
-sudo apt install ./hx_amd64.deb
+wget https://github.com/sanohiro/hx/releases/latest/download/he_amd64.deb
+sudo apt install ./he_amd64.deb
 ```
 
 ### Build from source
@@ -76,7 +76,7 @@ sudo apt install ./hx_amd64.deb
 git clone https://github.com/sanohiro/hx
 cd hx
 cargo build --release
-cp ./target/release/hx ./target/release/bx ~/.local/bin/
+cp ./target/release/he ./target/release/bx ~/.local/bin/
 ```
 
 ---
@@ -84,10 +84,10 @@ cp ./target/release/hx ./target/release/bx ~/.local/bin/
 ## Quick Start
 
 ```bash
-hx file.bin          # Open a file
-hx                   # Start with empty buffer
-cat file.bin | hx    # Read from stdin
-echo -n "Hello" | hx # Pipe data
+he file.bin          # Open a file
+he                   # Start with empty buffer
+cat file.bin | he    # Read from stdin
+echo -n "Hello" | he # Pipe data
 ```
 
 Save and quit: `C-x C-s` → `C-x C-c`
@@ -96,7 +96,7 @@ Save and quit: `C-x C-s` → `C-x C-c`
 
 ## Keybindings
 
-hx uses Emacs-style keybindings. `C-` means Ctrl, `M-` means Alt/Option.
+he uses Emacs-style keybindings. `C-` means Ctrl, `M-` means Alt/Option.
 
 ### Cursor Movement
 
@@ -217,7 +217,7 @@ Bracketed paste auto-detects format:
 
 ## bx — Binary Tool for Pipes
 
-Unix-style binary manipulation tool included with hx.
+Unix-style binary manipulation tool included with he.
 
 ```bash
 # Find hex pattern
