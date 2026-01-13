@@ -172,7 +172,7 @@ impl App {
 
     /// 表示可能行数を設定
     pub fn set_visible_rows(&mut self, rows: usize) {
-        self.visible_rows = rows.saturating_sub(4); // ヘッダー、ステータスバー分
+        self.visible_rows = rows.saturating_sub(1); // ステータスバー分
     }
 
     /// カーソルを上に移動
@@ -1670,23 +1670,10 @@ impl App {
         let layout = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
-                Constraint::Length(1), // タイトル
                 Constraint::Min(1),    // メイン
                 Constraint::Length(1), // ステータス
             ])
             .split(size);
-
-        // タイトルバー
-        let title = format!(
-            " hx - {} {}",
-            self.document
-                .filename()
-                .unwrap_or("[New File]"),
-            if self.document.is_modified() { "[+]" } else { "" }
-        );
-        let title_widget = Paragraph::new(title)
-            .style(Style::default().bg(Color::Blue).fg(Color::White));
-        frame.render_widget(title_widget, layout[0]);
 
         // HEXビュー
         let hex_view = HexView::new(self.document.data())
@@ -1700,17 +1687,18 @@ impl App {
             } else {
                 ViewMode::Ascii
             });
-        frame.render_widget(hex_view, layout[1]);
+        frame.render_widget(hex_view, layout[0]);
 
-        // ステータスバー
-        let mode_str = if self.hex_mode { "HEX" } else { "ASCII" };
+        // ステータスバー（ファイル名 + 情報を統合）
+        let filename = self.document.filename().unwrap_or("[New]");
+        let modified = if self.document.is_modified() { "[+]" } else { "" };
+        let mode_str = if self.hex_mode { "HEX" } else { "ASC" };
         let edit_str = match self.edit_mode {
             EditMode::Overwrite => "OVR",
             EditMode::Insert => "INS",
         };
 
         let status = if self.search_mode {
-            // 検索モード中は検索プロンプトを表示
             format!("I-search: {}_", self.search_query)
         } else if self.replace_mode == ReplaceMode::EnteringSearch {
             format!("Query replace: {}_", self.search_query)
@@ -1734,31 +1722,25 @@ impl App {
         } else if self.confirm_mode != ConfirmMode::Off {
             "Save changes? (y)es (n)o (c)ancel".to_string()
         } else if let Some(ref msg) = self.status_message {
-            msg.clone()
+            format!(" {}{} | {}", filename, modified, msg)
         } else if let Some((start, end)) = self.selection {
-            // 選択範囲がある場合は数値解釈を表示
-            self.format_selection_info(start, end)
+            format!(" {}{} | {}", filename, modified, self.format_selection_info(start, end))
         } else {
-            let byte_info = if self.cursor < self.document.len() {
-                let byte = self.document.get(self.cursor).unwrap_or(0);
-                format!("Byte: {:02X} ({:3})", byte, byte)
-            } else {
-                "EOF".to_string()
-            };
             format!(
-                " {:08X} / {:08X} | {} | {} | {} | {}",
+                " {}{} | {:08X}/{:08X} | {} {} | {}",
+                filename,
+                modified,
                 self.cursor,
                 self.document.len(),
                 mode_str,
                 edit_str,
                 self.encoding.name(),
-                byte_info,
             )
         };
 
         let status_widget = Paragraph::new(status)
             .style(Style::default().bg(Color::DarkGray).fg(Color::White));
-        frame.render_widget(status_widget, layout[2]);
+        frame.render_widget(status_widget, layout[1]);
     }
 }
 
