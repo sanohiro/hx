@@ -92,6 +92,8 @@ pub struct App {
     search_mode: bool,
     /// 検索クエリ（入力中の文字列）
     search_query: String,
+    /// 前回の検索クエリ（検索再利用用）
+    last_search_query: String,
     /// 検索開始位置（検索キャンセル時に戻る位置）
     search_start_pos: usize,
     /// 置換モード
@@ -128,6 +130,7 @@ impl App {
             status_message: None,
             search_mode: false,
             search_query: String::new(),
+            last_search_query: String::new(),
             search_start_pos: 0,
             replace_mode: ReplaceMode::Off,
             replace_with: String::new(),
@@ -996,18 +999,28 @@ impl App {
             // Enter: 検索確定
             KeyCode::Enter => {
                 self.search_mode = false;
-                if self.search_query.is_empty() {
-                    self.status_message = Some("Search cancelled".to_string());
-                } else {
+                if !self.search_query.is_empty() {
+                    // 検索クエリを保存
+                    self.last_search_query = self.search_query.clone();
                     self.status_message = Some(format!("I-search: {}", self.search_query));
+                } else {
+                    self.status_message = Some("Search cancelled".to_string());
                 }
             }
             // C-s: 次を検索
             KeyCode::Char('s') if ctrl => {
+                // クエリが空なら前回の検索クエリを使用
+                if self.search_query.is_empty() && !self.last_search_query.is_empty() {
+                    self.search_query = self.last_search_query.clone();
+                }
                 self.find_next();
             }
             // C-r: 前を検索
             KeyCode::Char('r') if ctrl => {
+                // クエリが空なら前回の検索クエリを使用
+                if self.search_query.is_empty() && !self.last_search_query.is_empty() {
+                    self.search_query = self.last_search_query.clone();
+                }
                 self.find_prev();
             }
             // Backspace: 1文字削除
